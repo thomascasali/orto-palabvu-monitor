@@ -1,3 +1,5 @@
-esp32/config.h
+esp32/include/config.h
 server/.env
 server/node_modules/
+esp32/.pio/
+esp32/.vscode/

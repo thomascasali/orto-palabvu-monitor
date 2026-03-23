@@ -36,18 +36,14 @@ Schema pin dettagliato: [docs/wiring.md](docs/wiring.md)
 
 ### ESP32
 
-1. Copiare `esp32/config.h.example` in `esp32/config.h`
+1. Copiare `esp32/include/config.h.example` in `esp32/include/config.h`
 2. Inserire le proprie credenziali WiFi e gli IP del broker MQTT
-3. Aprire `esp32/sensori_palabvu_esp32.ino` nell'IDE Arduino o PlatformIO
-4. Installare le librerie:
-   - PubSubClient
-   - DHT sensor library
-   - Adafruit BMP280
-   - OneWire
-   - DallasTemperature
-   - Adafruit SSD1306
-   - Adafruit GFX Library
-5. Compilare e caricare sull'ESP32
+3. Compilare e caricare con PlatformIO:
+   ```bash
+   cd esp32
+   pio run -t upload
+   ```
+   Le librerie vengono installate automaticamente da `platformio.ini`.
 
 ### Raspberry Pi (server)
 
