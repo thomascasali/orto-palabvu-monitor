@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Orto</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2 class="text-center">Dashboard Orto</h2>
+
+        <div class="ultime-letture">
+            <h4>Letture delle <span id="oraUltimaLettura"></span> </h4>
+            <p>Temperatura Aria: <span id="ultimaLetturaTemperatura"></span></p>
+            <p>Umidità Aria: <span id="ultimaLetturaUmiditaAria"></span></p>
+            <p>Pressione Atmosferica: <span id="ultimaLetturaPressione"></span></p>
+            <p>Umidità Terreno: <span id="ultimaLetturaUmiditaTerreno"></span></p>
+            <p>Temperatura Terreno: <span id="ultimaLetturaTemperaturaTerreno"></span></p>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <canvas id="temperaturaChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="umiditaAriaChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="pressioneChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="umiditaTerrenoChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="temperaturaTerrenoChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

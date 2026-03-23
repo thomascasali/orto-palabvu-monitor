@@ -1,0 +1,21 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// Credenziali WiFi (aggiungere/rimuovere reti secondo necessita)
+struct WiFiCredentials {
+  const char* ssid;
+  const char* password;
+};
+
+WiFiCredentials wifiCredentials[] = {
+  {"SSID_RETE_1", "PASSWORD_1"},
+  {"SSID_RETE_2", "PASSWORD_2"}
+};
+const int numberOfNetworks = sizeof(wifiCredentials) / sizeof(WiFiCredentials);
+
+// MQTT broker
+const char* mqtt_server_locale = "192.168.x.x";     // IP locale del Raspberry Pi
+const char* mqtt_server_esterno = "xxx.xxx.xxx.xxx"; // IP pubblico (NAT)
+const char* ssid_rete_locale = "SSID_RETE_1";       // SSID della rete domestica
+
+#endif

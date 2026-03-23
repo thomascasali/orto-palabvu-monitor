@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard PalaBVU</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+</head>
+<body>
+    <div class="container mt-4" style="padding-top: 0px;">
+        <h2 class="text-center">Dashboard PalaBVU</h2>
+
+        <div class="container mt-4" style="padding-top: 0px;">
+            <h4 class="text-center">Ultime Letture <span id="oraUltimaLettura"></span></h4>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover text-center">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Interna</th>
+                            <th>Esterna</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>Temperatura</th>
+                            <td><span id="ultimaLetturaTemperaturaInterna">-</span></td>
+                            <td><span id="ultimaLetturaTemperaturaEsterna">-</span></td>
+                        </tr>
+                        <tr>
+                            <th>Umidità</th>
+                            <td><span id="ultimaLetturaUmiditaInterna">-</span></td>
+                            <td><span id="ultimaLetturaUmiditaEsterna">-</span></td>
+                        </tr>
+                        <tr>
+                            <th>Pressione</th>
+                            <td><span id="ultimaLetturaPressioneInterna">-</span></td>
+                            <td><span id="ultimaLetturaPressioneEsterna">-</span></td>
+                        </tr>
+                        <tr>
+                            <th>Sabbia</th>
+                            <td><span id="ultimaLetturaTemperaturaTerreno">-</span></td>
+                            <td><span id="ultimaLetturaUmiditaTerreno">-</span> %</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <canvas id="temperaturaInternaChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="temperaturaTerrenoChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="umiditaInternaChart"></canvas>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <canvas id="temperaturaEsternaChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="umiditaEsternaChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="pressioneInternaChart"></canvas>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <canvas id="umiditaTerrenoChart"></canvas>
+            </div>
+            <div class="col">
+                <canvas id="pressioneEsternaChart"></canvas>
+            </div>
+            <div class="col">
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="palabvu.js"></script>
+</body>
+</html>
