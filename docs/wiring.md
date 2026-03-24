@@ -4,8 +4,8 @@
 
 | Dispositivo      | SDA      | SCL      | Indirizzo |
 |------------------|----------|----------|-----------|
-| OLED SSD1306     | GPIO 21  | GPIO 22  | 0x3C      |
-| BMP280           | GPIO 21  | GPIO 22  | 0x77      |
+| OLED SSD1306     | GPIO 22  | GPIO 21  | 0x3C      |
+| BMP280           | GPIO 22  | GPIO 21  | 0x77      |
 
 ## Sensori digitali
 

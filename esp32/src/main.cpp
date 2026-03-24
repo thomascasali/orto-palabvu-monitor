@@ -21,6 +21,14 @@ void aggiornaDisplay();
 void setupWiFiManager();
 void salvaParametriMQTT();
 void caricaParametriMQTT();
+void callback(char* topic, byte* message, unsigned int length);
+void TaskReconnect(void *pvParameters);
+void timeStamp();
+void leggiUmiditaTerreno();
+void leggiAriaInterna();
+void leggiAriaEsterna();
+void leggiPressioneInterna();
+void leggiTemperaturaSuolo();
 
 // ── MQTT ─────────────────────────────────────────────────────
 char mqtt_server_locale[40]  = "192.168.1.3";
@@ -50,6 +58,11 @@ Preferences preferences;
 // Pin per reset configurazione (opzionale: collegare un pulsante a GND)
 #define PIN_RESET_CONFIG 0  // BOOT button su ESP32 DevKit
 
+// LED stato connessione (built-in sulla board)
+#define PIN_LED_STATUS 2    // LED blu su ESP32 DevKit
+unsigned long ultimoBlinkLed = 0;
+bool ledStato = false;
+
 // ── SENSORI ──────────────────────────────────────────────────
 // DHT22 temperatura e umidita aria
 #define DHTPIN_TEMPERATURA_INTERNA 13
@@ -69,8 +82,8 @@ const int pinSensoreUmiditaTerreno = 36; // VP pin
 
 // BMP280 pressione (I2C)
 Adafruit_BMP280 bmp;
-#define I2C_SDA 21
-#define I2C_SCL 22
+#define I2C_SDA 22
+#define I2C_SCL 21
 bool bmp280Inizializzato = false;
 
 // ── DISPLAY OLED SSD1306 128x32 (I2C condiviso con BMP280) ──
@@ -367,6 +380,10 @@ void setup() {
   // Pin reset configurazione WiFi (BOOT button)
   pinMode(PIN_RESET_CONFIG, INPUT_PULLUP);
 
+  // LED stato connessione
+  pinMode(PIN_LED_STATUS, OUTPUT);
+  digitalWrite(PIN_LED_STATUS, LOW);
+
   // Sensore temperatura terreno
   sensors.begin();
   if (sensors.getDeviceCount() == 0) {
@@ -427,12 +444,8 @@ void setup() {
   // Task di riconnessione MQTT sul core 1
   xTaskCreatePinnedToCore(TaskReconnect, "TaskReconnect", 10000, NULL, 1, NULL, 1);
 
-  // Watchdog Timer (5 minuti)
-  esp_task_wdt_config_t wdtConfig = {
-    .timeout_ms = 300000,
-    .trigger_panic = true,
-  };
-  esp_task_wdt_init(&wdtConfig);
+  // Watchdog Timer (5 minuti = 300 secondi)
+  esp_task_wdt_init(300, true);
   esp_task_wdt_add(NULL);
 
   // Mostra pagina connessione sul display
@@ -463,6 +476,15 @@ void loop() {
     leggiPressioneInterna();
     leggiTemperaturaSuolo();
     ultimoInvioDati = currentMillis;
+  }
+
+  // LED stato: fisso se connesso, lampeggiante se disconnesso
+  if (WiFi.status() == WL_CONNECTED) {
+    digitalWrite(PIN_LED_STATUS, HIGH);
+  } else if (currentMillis - ultimoBlinkLed >= 500) {
+    ultimoBlinkLed = currentMillis;
+    ledStato = !ledStato;
+    digitalWrite(PIN_LED_STATUS, ledStato);
   }
 
   // Rotazione pagine display ogni 4 secondi
