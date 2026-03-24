@@ -1,21 +1,22 @@
-#ifndef CONFIG_H
-#define CONFIG_H
-
-// Credenziali WiFi (aggiungere/rimuovere reti secondo necessita)
-struct WiFiCredentials {
-  const char* ssid;
-  const char* password;
-};
-
-WiFiCredentials wifiCredentials[] = {
-  {"SSID_RETE_1", "PASSWORD_1"},
-  {"SSID_RETE_2", "PASSWORD_2"}
-};
-const int numberOfNetworks = sizeof(wifiCredentials) / sizeof(WiFiCredentials);
-
-// MQTT broker
-const char* mqtt_server_locale = "192.168.x.x";     // IP locale del Raspberry Pi
-const char* mqtt_server_esterno = "xxx.xxx.xxx.xxx"; // IP pubblico (NAT)
-const char* ssid_rete_locale = "SSID_RETE_1";       // SSID della rete domestica
-
-#endif
+// ══════════════════════════════════════════════════════════════
+// QUESTO FILE NON E' PIU' NECESSARIO
+// ══════════════════════════════════════════════════════════════
+//
+// Le credenziali WiFi e i parametri MQTT vengono ora gestiti
+// tramite WiFiManager (portale captive) e salvati in NVS.
+//
+// Al primo avvio, l'ESP32 crea la rete "ESP32Sensor-Setup".
+// Collegati con il telefono e configura:
+//   - SSID e password WiFi
+//   - MQTT Broker Locale (IP LAN del Raspberry Pi)
+//   - MQTT Broker Esterno (IP pubblico / NAT)
+//   - SSID Rete Locale (per scegliere broker locale vs esterno)
+//
+// Per resettare la configurazione: tieni premuto il pulsante
+// BOOT durante l'accensione dell'ESP32.
+//
+// Valori di default (hardcoded in main.cpp):
+//   mqtt_server_locale  = "192.168.1.3"
+//   mqtt_server_esterno = ""
+//   ssid_rete_locale    = ""
+// ══════════════════════════════════════════════════════════════

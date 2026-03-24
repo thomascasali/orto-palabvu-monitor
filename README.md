@@ -36,14 +36,21 @@ Schema pin dettagliato: [docs/wiring.md](docs/wiring.md)
 
 ### ESP32
 
-1. Copiare `esp32/include/config.h.example` in `esp32/include/config.h`
-2. Inserire le proprie credenziali WiFi e gli IP del broker MQTT
-3. Compilare e caricare con PlatformIO:
+1. Compilare e caricare con PlatformIO:
    ```bash
    cd esp32
    pio run -t upload
    ```
    Le librerie vengono installate automaticamente da `platformio.ini`.
+
+2. **Prima configurazione (WiFiManager):**
+   - Al primo avvio l'ESP32 crea la rete WiFi **ESP32Sensor-Setup**
+   - Collegarsi con il telefono a questa rete
+   - Si apre automaticamente un portale captive (oppure navigare a `192.168.4.1`)
+   - Inserire: SSID e password della rete WiFi, IP broker MQTT locale, IP broker MQTT esterno, SSID della rete locale (per scegliere automaticamente il broker)
+   - I parametri vengono salvati nella flash (NVS) e riusati ai riavvii successivi
+
+3. **Reset configurazione:** tenere premuto il pulsante **BOOT** durante l'accensione per cancellare le credenziali salvate e riaprire il portale di configurazione
 
 ### Raspberry Pi (server)
 

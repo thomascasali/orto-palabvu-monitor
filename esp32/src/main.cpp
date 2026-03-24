@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <WiFiManager.h>
 #include <PubSubClient.h>
 #include <DHT.h>
 #include <Adafruit_Sensor.h>
@@ -9,17 +10,23 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include "config.h"
+#include <Preferences.h>
 
 // Prototipi
-void reconnectWiFi();
 void reconnectMQTT();
 void printlnSeriale(String data);
 void printSeriale(String data);
 bool initOled();
 void aggiornaDisplay();
+void setupWiFiManager();
+void salvaParametriMQTT();
+void caricaParametriMQTT();
 
 // ── MQTT ─────────────────────────────────────────────────────
+char mqtt_server_locale[40]  = "192.168.1.3";
+char mqtt_server_esterno[40] = "";
+char ssid_rete_locale[33]    = "";
+
 const char* mqtt_server = "";
 const char* temperatura_interna_topic = "palabvu/temperatura_interna";
 const char* temperatura_esterna_topic = "palabvu/temperatura_esterna";
@@ -34,6 +41,14 @@ String indirizzoIP = "";
 String ssidConnesso = "";
 const char* topic_msg_to_dispositivo = "palabvu/comando";
 const char* topic_connessione = "palabvu/connessione";
+
+// ── WiFiManager ─────────────────────────────────────────────
+WiFiManager wm;
+bool salvareConfig = false;        // flag settato dal callback
+Preferences preferences;
+
+// Pin per reset configurazione (opzionale: collegare un pulsante a GND)
+#define PIN_RESET_CONFIG 0  // BOOT button su ESP32 DevKit
 
 // ── SENSORI ──────────────────────────────────────────────────
 // DHT22 temperatura e umidita aria
@@ -98,6 +113,94 @@ float temperaturaSuolo = 0;
 #define livelloPocoUmido 1.8
 #define livelloUmido     1.2
 #define livelloBagnato   0.6
+
+// ══════════════════════════════════════════════════════════════
+// PERSISTENZA PARAMETRI MQTT (NVS)
+// ══════════════════════════════════════════════════════════════
+void caricaParametriMQTT() {
+  preferences.begin("mqtt", true); // read-only
+  String s;
+  s = preferences.getString("broker_loc", "");
+  if (s.length() > 0) strncpy(mqtt_server_locale, s.c_str(), sizeof(mqtt_server_locale));
+  s = preferences.getString("broker_ext", "");
+  if (s.length() > 0) strncpy(mqtt_server_esterno, s.c_str(), sizeof(mqtt_server_esterno));
+  s = preferences.getString("ssid_locale", "");
+  if (s.length() > 0) strncpy(ssid_rete_locale, s.c_str(), sizeof(ssid_rete_locale));
+  preferences.end();
+  Serial.printf("[NVS] broker_loc=%s  broker_ext=%s  ssid_locale=%s\n",
+                mqtt_server_locale, mqtt_server_esterno, ssid_rete_locale);
+}
+
+void salvaParametriMQTT() {
+  preferences.begin("mqtt", false); // read-write
+  preferences.putString("broker_loc", mqtt_server_locale);
+  preferences.putString("broker_ext", mqtt_server_esterno);
+  preferences.putString("ssid_locale", ssid_rete_locale);
+  preferences.end();
+  Serial.println("[NVS] Parametri MQTT salvati");
+}
+
+// ══════════════════════════════════════════════════════════════
+// WiFiManager: CONFIGURAZIONE VIA PORTALE CAPTIVE
+// ══════════════════════════════════════════════════════════════
+void saveConfigCallback() {
+  salvareConfig = true;
+}
+
+void setupWiFiManager() {
+  // Campi custom per MQTT
+  WiFiManagerParameter param_broker_loc("broker_loc", "MQTT Broker Locale (IP)", mqtt_server_locale, 40);
+  WiFiManagerParameter param_broker_ext("broker_ext", "MQTT Broker Esterno (IP)", mqtt_server_esterno, 40);
+  WiFiManagerParameter param_ssid_locale("ssid_locale", "SSID Rete Locale", ssid_rete_locale, 33);
+
+  wm.addParameter(&param_broker_loc);
+  wm.addParameter(&param_broker_ext);
+  wm.addParameter(&param_ssid_locale);
+
+  wm.setSaveConfigCallback(saveConfigCallback);
+
+  // Timeout portale: 3 minuti, poi riavvia
+  wm.setConfigPortalTimeout(180);
+
+  // Mostra messaggio sul display durante configurazione
+  if (oledReady) {
+    oled.clearDisplay();
+    oled.setTextSize(1);
+    oled.setCursor(0, 0);
+    oled.println("== SETUP WiFi ==");
+    oled.println("Connettiti a:");
+    oled.println("ESP32Sensor-Setup");
+    oled.println("poi vai a 192.168.4.1");
+    oled.display();
+  }
+
+  // Tenta connessione automatica, altrimenti apre il portale
+  if (!wm.autoConnect("ESP32Sensor-Setup")) {
+    Serial.println(F("[WiFi] Portale scaduto - riavvio"));
+    ESP.restart();
+  }
+
+  // Se l'utente ha salvato nuove credenziali dal portale
+  if (salvareConfig) {
+    strncpy(mqtt_server_locale, param_broker_loc.getValue(), sizeof(mqtt_server_locale));
+    strncpy(mqtt_server_esterno, param_broker_ext.getValue(), sizeof(mqtt_server_esterno));
+    strncpy(ssid_rete_locale, param_ssid_locale.getValue(), sizeof(ssid_rete_locale));
+    salvaParametriMQTT();
+  }
+
+  // Connessione riuscita
+  indirizzoIP = WiFi.localIP().toString();
+  ssidConnesso = WiFi.SSID();
+  Serial.println("Connesso a " + ssidConnesso + " con IP " + indirizzoIP);
+
+  // Seleziona broker MQTT in base alla rete
+  if (ssidConnesso == String(ssid_rete_locale)) {
+    mqtt_server = mqtt_server_locale;
+  } else {
+    mqtt_server = mqtt_server_esterno;
+  }
+  client.setServer(mqtt_server, 1883);
+}
 
 // ══════════════════════════════════════════════════════════════
 // OLED INIT (pattern dalla guida con recovery bus I2C)
@@ -261,6 +364,9 @@ void setup() {
   String macAddress = WiFi.macAddress();
   Serial.println("MAC: " + macAddress);
 
+  // Pin reset configurazione WiFi (BOOT button)
+  pinMode(PIN_RESET_CONFIG, INPUT_PULLUP);
+
   // Sensore temperatura terreno
   sensors.begin();
   if (sensors.getDeviceCount() == 0) {
@@ -294,12 +400,31 @@ void setup() {
   // Timeout I2C finale dopo tutte le init
   Wire.setTimeOut(1000);
 
-  // WiFi + MQTT
-  reconnectWiFi();
+  // Carica parametri MQTT salvati in NVS
+  caricaParametriMQTT();
+
+  // Se il pulsante BOOT e premuto all'avvio, resetta la configurazione WiFi
+  if (digitalRead(PIN_RESET_CONFIG) == LOW) {
+    Serial.println(F("[WiFi] Reset configurazione richiesto!"));
+    if (oledReady) {
+      oled.clearDisplay();
+      oled.setCursor(0, 0);
+      oled.println("RESET CONFIG WiFi");
+      oled.println("Rilascia BOOT...");
+      oled.display();
+    }
+    wm.resetSettings();
+    delay(1000);
+  }
+
+  // WiFiManager: connessione automatica o portale captive
+  setupWiFiManager();
+
+  // MQTT
   client.setCallback(callback);
   reconnectMQTT();
 
-  // Task di riconnessione sul core 1
+  // Task di riconnessione MQTT sul core 1
   xTaskCreatePinnedToCore(TaskReconnect, "TaskReconnect", 10000, NULL, 1, NULL, 1);
 
   // Watchdog Timer (5 minuti)
@@ -446,45 +571,8 @@ void callback(char* topic, byte* message, unsigned int length) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// CONNESSIONE WiFi / MQTT
+// CONNESSIONE MQTT
 // ══════════════════════════════════════════════════════════════
-void reconnectWiFi() {
-  if (WiFi.status() != WL_CONNECTED) {
-    for (int networkIndex = 0; networkIndex < numberOfNetworks; networkIndex++) {
-      if (strlen(wifiCredentials[networkIndex].password) > 0) {
-        WiFi.begin(wifiCredentials[networkIndex].ssid, wifiCredentials[networkIndex].password);
-      } else {
-        WiFi.begin(wifiCredentials[networkIndex].ssid);
-      }
-      unsigned long startAttemptTime = millis();
-      Serial.print("Connessione a ");
-      Serial.print(wifiCredentials[networkIndex].ssid);
-      Serial.print("...");
-      while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 10000) {
-        delay(200);
-        Serial.print(".");
-      }
-      Serial.println();
-      if (WiFi.status() == WL_CONNECTED) {
-        indirizzoIP = WiFi.localIP().toString();
-        ssidConnesso = wifiCredentials[networkIndex].ssid;
-        Serial.println("Connesso a " + ssidConnesso + " con IP " + indirizzoIP);
-
-        if (ssidConnesso == ssid_rete_locale) {
-          mqtt_server = mqtt_server_locale;
-        } else {
-          mqtt_server = mqtt_server_esterno;
-        }
-        client.setServer(mqtt_server, 1883);
-        break;
-      }
-    }
-    if (WiFi.status() != WL_CONNECTED) {
-      Serial.println(F("Connessione WiFi fallita su tutte le reti."));
-    }
-  }
-}
-
 void reconnectMQTT() {
   unsigned long startAttemptTime = millis();
   while (!client.connected() && millis() - startAttemptTime < 10000) {
@@ -501,15 +589,24 @@ void reconnectMQTT() {
 }
 
 // Task riconnessione sul Core 1
+// WiFiManager gestisce la riconnessione WiFi automaticamente,
+// qui ci occupiamo solo di MQTT e del fallback WiFi
 void TaskReconnect(void *pvParameters) {
   for (;;) {
     if (WiFi.status() != WL_CONNECTED) {
-      reconnectWiFi();
+      // WiFiManager tenta di riconnettersi alla rete salvata
+      WiFi.reconnect();
+      vTaskDelay(10000 / portTICK_PERIOD_MS);
+      if (WiFi.status() == WL_CONNECTED) {
+        indirizzoIP = WiFi.localIP().toString();
+        ssidConnesso = WiFi.SSID();
+        Serial.println("Riconnesso a " + ssidConnesso);
+      }
     }
-    if (!client.connected()) {
+    if (WiFi.status() == WL_CONNECTED && !client.connected()) {
       reconnectMQTT();
     }
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
   }
 }
 
