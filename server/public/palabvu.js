@@ -67,7 +67,7 @@ function aggiornaGrafico(chart, tipo, message) {
     }
 }
 
-function caricaDatiStorici(chart, datiStorici) {
+function caricaDatiStorici(chart, datiStorici, tipo) {
     datiStorici.forEach(dato => {
         const dataOra = new Date(dato.timestamp);
         const oraMinuti = dataOra.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -77,16 +77,24 @@ function caricaDatiStorici(chart, datiStorici) {
         }
     });
     chart.update();
+
+    // Popola la tabella ultime letture con l'ultimo dato storico disponibile
+    if (tipo && datiStorici.length > 0) {
+        const ultimo = datiStorici[datiStorici.length - 1];
+        const dataOra = new Date(ultimo.timestamp);
+        const oraMinuti = dataOra.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        aggiornaUltimeLetture(tipo, ultimo.value, oraMinuti);
+    }
 }
 
 // Dati storici
-socket.on('temperaturaInternaStorico', (datiStorici) => caricaDatiStorici(temperaturaInternaChart, datiStorici));
-socket.on('temperaturaTerrenoStorico', (datiStorici) => caricaDatiStorici(temperaturaTerrenoChart, datiStorici));
-socket.on('umiditaInternaStorico', (datiStorici) => caricaDatiStorici(umiditaInternaChart, datiStorici));
-socket.on('pressioneInternaStorico', (datiStorici) => caricaDatiStorici(pressioneInternaChart, datiStorici));
-socket.on('temperaturaEsternaStorico', (datiStorici) => caricaDatiStorici(temperaturaEsternaChart, datiStorici));
-socket.on('umiditaEsternaStorico', (datiStorici) => caricaDatiStorici(umiditaEsternaChart, datiStorici));
-socket.on('pressioneEsternaStorico', (datiStorici) => caricaDatiStorici(pressioneEsternaChart, datiStorici));
+socket.on('temperaturaInternaStorico', (datiStorici) => caricaDatiStorici(temperaturaInternaChart, datiStorici, 'TemperaturaInterna'));
+socket.on('temperaturaTerrenoStorico', (datiStorici) => caricaDatiStorici(temperaturaTerrenoChart, datiStorici, 'TemperaturaTerreno'));
+socket.on('umiditaInternaStorico', (datiStorici) => caricaDatiStorici(umiditaInternaChart, datiStorici, 'UmiditaInterna'));
+socket.on('pressioneInternaStorico', (datiStorici) => caricaDatiStorici(pressioneInternaChart, datiStorici, 'PressioneInterna'));
+socket.on('temperaturaEsternaStorico', (datiStorici) => caricaDatiStorici(temperaturaEsternaChart, datiStorici, 'TemperaturaEsterna'));
+socket.on('umiditaEsternaStorico', (datiStorici) => caricaDatiStorici(umiditaEsternaChart, datiStorici, 'UmiditaEsterna'));
+socket.on('pressioneEsternaStorico', (datiStorici) => caricaDatiStorici(pressioneEsternaChart, datiStorici, 'PressioneEsterna'));
 
 // Aggiornamenti real-time
 socket.on('temperaturaInternaUpdate', (message) => aggiornaGrafico(temperaturaInternaChart, 'TemperaturaInterna', message));
@@ -104,6 +112,8 @@ function convertiInPercentuale(valore) {
 }
 
 socket.on('umiditaTerrenoStorico', (datiStorici) => {
+    let ultimoValido = null;
+    let ultimaOra = null;
     datiStorici.forEach(dato => {
         const valorePercentuale = convertiInPercentuale(dato.value);
         if (valorePercentuale !== null) {
@@ -113,9 +123,16 @@ socket.on('umiditaTerrenoStorico', (datiStorici) => {
                 umiditaTerrenoChart.data.labels.push(oraMinuti);
                 umiditaTerrenoChart.data.datasets[0].data.push(valorePercentuale);
             }
+            ultimoValido = valorePercentuale;
+            ultimaOra = oraMinuti;
         }
     });
     umiditaTerrenoChart.update();
+
+    // Popola tabella con ultimo dato storico valido
+    if (ultimoValido !== null) {
+        aggiornaUltimeLetture('UmiditaTerreno', ultimoValido, ultimaOra);
+    }
 });
 
 socket.on('umiditaTerrenoUpdate', (message) => {

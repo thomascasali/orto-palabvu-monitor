@@ -72,6 +72,13 @@ socket.on('umiditaTerrenoStorico', (datiStorici) => {
         }
     });
     umiditaTerrenoChart.update();
+
+    if (datiStorici.length > 0) {
+        const ultimo = datiStorici[datiStorici.length - 1];
+        const dataOra = new Date(ultimo.timestamp);
+        const oraMinuti = dataOra.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        aggiornaUltimeLetture('UmiditaTerreno', ultimo.value, oraMinuti);
+    }
 });
 
 socket.on('umiditaTerrenoUpdate', (message) => {
@@ -119,6 +126,13 @@ socket.on('temperaturaAriaStorico', (datiStorici) => {
         }
     });
     temperaturaChart.update();
+
+    if (datiStorici.length > 0) {
+        const ultimo = datiStorici[datiStorici.length - 1];
+        const dataOra = new Date(ultimo.timestamp);
+        const oraMinuti = dataOra.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        aggiornaUltimeLetture('Temperatura', ultimo.value, oraMinuti);
+    }
 });
 
 socket.on('temperaturaUpdate', (message) => {
@@ -166,6 +180,13 @@ socket.on('umiditaAriaStorico', (datiStorici) => {
         }
     });
     umiditaAriaChart.update();
+
+    if (datiStorici.length > 0) {
+        const ultimo = datiStorici[datiStorici.length - 1];
+        const dataOra = new Date(ultimo.timestamp);
+        const oraMinuti = dataOra.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        aggiornaUltimeLetture('UmiditaAria', ultimo.value, oraMinuti);
+    }
 });
 
 socket.on('umiditaAriaUpdate', (message) => {
@@ -213,6 +234,13 @@ socket.on('pressioneStorico', (datiStorici) => {
         }
     });
     pressioneChart.update();
+
+    if (datiStorici.length > 0) {
+        const ultimo = datiStorici[datiStorici.length - 1];
+        const dataOra = new Date(ultimo.timestamp);
+        const oraMinuti = dataOra.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        aggiornaUltimeLetture('Pressione', ultimo.value, oraMinuti);
+    }
 });
 
 socket.on('pressioneUpdate', (message) => {
@@ -260,6 +288,13 @@ socket.on('temperaturaTerrenoStorico', (datiStorici) => {
         }
     });
     temperaturaTerrenoChart.update();
+
+    if (datiStorici.length > 0) {
+        const ultimo = datiStorici[datiStorici.length - 1];
+        const dataOra = new Date(ultimo.timestamp);
+        const oraMinuti = dataOra.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        aggiornaUltimeLetture('TemperaturaTerreno', ultimo.value, oraMinuti);
+    }
 });
 
 socket.on('temperaturaTerrenoUpdate', (message) => {
